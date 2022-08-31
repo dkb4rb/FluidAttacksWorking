@@ -6,7 +6,7 @@ dicovered-vulnerabilities:
   in-repo: 0
   total: 1
 estimated-vulnerabilities: 1
-discovery-percentage: 10%
+discovery-percentage: 20%
 total-time: 2
 effort: 2
 date: '2022-08-26 6:46:10Z'

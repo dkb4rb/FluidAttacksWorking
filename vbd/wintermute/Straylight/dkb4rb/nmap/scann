@@ -1,0 +1,30 @@
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-08-31 04:42 -05
+Stats: 0:00:08 elapsed; 0 hosts completed (1 up), 1 undergoing Service Scan
+Service scan Timing: About 33.33% done; ETC: 04:42 (0:00:12 remaining)
+Nmap scan report for 192.168.18.94
+Host is up (0.00016s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT     STATE SERVICE            VERSION
+25/tcp   open  smtp               Postfix smtpd
+|_smtp-commands: straylight, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=straylight
+| Subject Alternative Name: DNS:straylight
+| Not valid before: 2018-05-12T18:08:02
+|_Not valid after:  2028-05-09T18:08:02
+80/tcp   open  http               Apache httpd 2.4.25 ((Debian))
+|_http-title: Night City
+|_http-server-header: Apache/2.4.25 (Debian)
+3000/tcp open  hadoop-tasktracker Apache Hadoop
+|_http-trane-info: Problem with XML parsing of /evox/about
+| http-title: Welcome to ntopng
+|_Requested resource was /lua/login.lua?referer=/
+| hadoop-datanode-info: 
+|_  Logs: submit
+| hadoop-tasktracker-info: 
+|_  Logs: submit
+MAC Address: 08:00:27:29:B6:6A (Oracle VirtualBox virtual NIC)
+Service Info: Host:  straylight
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 9.30 seconds

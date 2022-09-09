@@ -1,0 +1,14 @@
+type: vbd
+user-name: dkb4rb
+stage: immersion
+dicovered-vulnerabilities:
+  by-me: 1
+  in-repo: 0
+  total: 1
+estimated-vulnerabilities: 1
+discovery-percentage: 20%
+total-time: 2
+effort: 2
+date: '2022-08-26 6:46:10Z'
+path: dkb4rb.feature
+
